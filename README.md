@@ -15,7 +15,7 @@ import (
 func main() {
 	wl := whois.Setup(whois.DefaultConfig())
 
-	info, raw, err := wl.GetWhois(context.Background(), "github.com")
+	info, raw, err := wl.GetRegistrarWhois(context.Background(), "github.com")
 	if err != nil {
 		log.Printf("error: %v", err)
 	} else {

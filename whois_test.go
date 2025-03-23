@@ -61,11 +61,21 @@ func TestGetTLDWhoisServer(t *testing.T) {
 	}
 }
 
-func TestGetWhois_InvalidDomain(t *testing.T) {
+func TestGetRegistryWhois_InvalidDomain(t *testing.T) {
 	whoisLookup := Setup(nil)
 	ctx := context.Background()
 
-	_, _, err := whoisLookup.GetWhois(ctx, "invalid_domain")
+	_, _, err := whoisLookup.GetRegistryWhois(ctx, "invalid_domain")
+	if err == nil {
+		t.Fatal("expected an error for invalid domain, got nil")
+	}
+}
+
+func TestGetRegistrarWhois_InvalidDomain(t *testing.T) {
+	whoisLookup := Setup(nil)
+	ctx := context.Background()
+
+	_, _, err := whoisLookup.GetRegistrarWhois(ctx, "invalid_domain")
 	if err == nil {
 		t.Fatal("expected an error for invalid domain, got nil")
 	}

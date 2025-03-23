@@ -120,8 +120,8 @@ func (wl *WhoisLookup) GetTLDWhoisServer(ctx context.Context, tld string) (tldSe
 	return tldServer, err
 }
 
-// GetWhois returns the WHOIS information for the specified domain.
-func (wl *WhoisLookup) GetWhois(ctx context.Context, domain string) (whoisInfo WhoisInfo, whoisRaw string, err error) {
+// GetRegistryWhois returns the WHOIS information for the specified domain from the registry.
+func (wl *WhoisLookup) GetRegistryWhois(ctx context.Context, domain string) (whoisInfo WhoisInfo, whoisRaw string, err error) {
 
 	pieces := strings.Split(domain, ".")
 	if len(pieces) < 2 {
@@ -149,7 +149,42 @@ func (wl *WhoisLookup) GetWhois(ctx context.Context, domain string) (whoisInfo W
 		return whoisInfo, whoisRaw, err
 	}
 
-	// If TLD whois responsec contains domain whois server, query domain whois server
+	return whoisInfo, whoisRaw, err
+}
+
+// GetRegistrarWhois returns the WHOIS information for the specified domain from the registrar.
+// If the TLD WHOIS response contains a domain WHOIS server, the domain WHOIS server is queried.
+// Registrar look ups typically contain more detailed information than registry look ups.
+// Registrar look ups require one extra step to query the domain WHOIS server and will take longer.
+func (wl *WhoisLookup) GetRegistrarWhois(ctx context.Context, domain string) (whoisInfo WhoisInfo, whoisRaw string, err error) {
+
+	pieces := strings.Split(domain, ".")
+	if len(pieces) < 2 {
+		err = fmt.Errorf("invalid domain name: %s", domain)
+		return whoisInfo, whoisRaw, err
+	}
+	tld := pieces[len(pieces)-1]
+
+	// Get TLD whois server
+	var whoisServer string
+	if whoisServer, err = wl.getWhoisServerForTLD(ctx, tld); err != nil {
+		err = fmt.Errorf("getTLDWhoisServer() error:%w", err)
+		return whoisInfo, whoisRaw, err
+	}
+
+	// Query TLD whois server
+	if whoisRaw, err = queryWhois(ctx, domain, whoisServer, wl.config.DefaultTimeout); err != nil {
+		err = fmt.Errorf("queryWhois() error:%w", err)
+		return whoisInfo, whoisRaw, err
+	}
+
+	// Parse raw whois data to WhoisInfo
+	if whoisInfo, err = wrapParser(whoisRaw); err != nil {
+		err = fmt.Errorf("parse error:%w", err)
+		return whoisInfo, whoisRaw, err
+	}
+
+	// If TLD whois response contains domain whois server, query domain whois server
 	if whoisInfo.Domain.WhoisServer != "" {
 		if whoisRaw, err = queryWhois(ctx, domain, whoisInfo.Domain.WhoisServer, wl.config.DefaultTimeout); err != nil {
 			err = fmt.Errorf("queryWhois() error:%w", err)
