@@ -1,5 +1,4 @@
-# Whois performs whois lookups on domains. In addition to raw it also returns a parsed structure of the whois data.
-
+## Whois performs whois lookups on domains. In addition to raw it also returns a parsed structure of the whois data.
 
 ## Quick example
 ```go
