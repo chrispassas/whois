@@ -30,7 +30,7 @@ func main() {
 ```
 
 ## JSON Output
-```
+```json
 {
   "domain": {
     "id": "1264983250_DOMAIN_COM-VRSN",
