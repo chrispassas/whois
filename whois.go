@@ -314,7 +314,7 @@ func (wl *WhoisLookup) getWhoisServerForTLD(ctx context.Context, tld string) (wh
 	err = ErrWhoisServerNotFound
 	err = fmt.Errorf("%w for TLD: %s", err, tld)
 
-	return "", fmt.Errorf("WHOIS server not found for TLD: %s", tld)
+	return "", err
 }
 
 // wrapParser by wrapping the output of whoisparser.WhoisInfo the underlying parser can be changed without affecting the output
