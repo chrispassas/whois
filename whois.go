@@ -136,8 +136,13 @@ func (wl *WhoisLookup) SetLocalAddr(localAddr *net.TCPAddr) {
 
 // GetTLDWhoisServer returns the WHOIS server for the specified TLD.
 func (wl *WhoisLookup) GetTLDWhoisServer(ctx context.Context, tld string) (tldServer string, err error) {
+	return wl.GetTLDWhoisServerWithLocalAddr(ctx, tld, nil)
+}
 
-	if tldServer, err = wl.getWhoisServerForTLD(ctx, tld); err != nil {
+// GetTLDWhoisServerWithLocalAddr returns the WHOIS server for the specified TLD.
+func (wl *WhoisLookup) GetTLDWhoisServerWithLocalAddr(ctx context.Context, tld string, localAddr *net.TCPAddr) (tldServer string, err error) {
+
+	if tldServer, err = wl.getWhoisServerForTLD(ctx, tld, localAddr); err != nil {
 		err = fmt.Errorf("wl.getTLDWhoisServer() error:%w", err)
 		return tldServer, err
 	}
@@ -147,6 +152,11 @@ func (wl *WhoisLookup) GetTLDWhoisServer(ctx context.Context, tld string) (tldSe
 
 // GetRegistryWhois returns the WHOIS information for the specified domain from the registry.
 func (wl *WhoisLookup) GetRegistryWhois(ctx context.Context, domain string) (whoisInfo WhoisInfo, whoisRaw string, err error) {
+	return wl.GetRegistryWhoisWithLocalAddr(ctx, domain, nil)
+}
+
+// GetRegistryWhoisWithLocalAddr returns the WHOIS information for the specified domain from the registry.
+func (wl *WhoisLookup) GetRegistryWhoisWithLocalAddr(ctx context.Context, domain string, localAddr *net.TCPAddr) (whoisInfo WhoisInfo, whoisRaw string, err error) {
 
 	pieces := strings.Split(domain, ".")
 	if len(pieces) < 2 {
@@ -157,13 +167,13 @@ func (wl *WhoisLookup) GetRegistryWhois(ctx context.Context, domain string) (who
 
 	// Get TLD whois server
 	var whoisServer string
-	if whoisServer, err = wl.getWhoisServerForTLD(ctx, tld); err != nil {
+	if whoisServer, err = wl.getWhoisServerForTLD(ctx, tld, nil); err != nil {
 		err = fmt.Errorf("getTLDWhoisServer() error:%w", err)
 		return whoisInfo, whoisRaw, err
 	}
 
 	// Query TLD whois server
-	if whoisRaw, err = wl.queryWhois(ctx, domain, whoisServer, wl.config.DefaultTimeout); err != nil {
+	if whoisRaw, err = wl.queryWhois(ctx, domain, whoisServer, wl.config.DefaultTimeout, nil); err != nil {
 		err = fmt.Errorf("queryWhois() error:%w", err)
 		return whoisInfo, whoisRaw, err
 	}
@@ -182,6 +192,14 @@ func (wl *WhoisLookup) GetRegistryWhois(ctx context.Context, domain string) (who
 // Registrar look ups typically contain more detailed information than registry look ups.
 // Registrar look ups require one extra step to query the domain WHOIS server and will take longer.
 func (wl *WhoisLookup) GetRegistrarWhois(ctx context.Context, domain string) (whoisInfo WhoisInfo, whoisRaw string, err error) {
+	return wl.GetRegistrarWhoisWithLocalAddr(ctx, domain, nil)
+}
+
+// GetRegistrarWhoisWithLocalAddr returns the WHOIS information for the specified domain from the registrar.
+// If the TLD WHOIS response contains a domain WHOIS server, the domain WHOIS server is queried.
+// Registrar look ups typically contain more detailed information than registry look ups.
+// Registrar look ups require one extra step to query the domain WHOIS server and will take longer.
+func (wl *WhoisLookup) GetRegistrarWhoisWithLocalAddr(ctx context.Context, domain string, localAddr *net.TCPAddr) (whoisInfo WhoisInfo, whoisRaw string, err error) {
 
 	pieces := strings.Split(domain, ".")
 	if len(pieces) < 2 {
@@ -192,13 +210,13 @@ func (wl *WhoisLookup) GetRegistrarWhois(ctx context.Context, domain string) (wh
 
 	// Get TLD whois server
 	var whoisServer string
-	if whoisServer, err = wl.getWhoisServerForTLD(ctx, tld); err != nil {
+	if whoisServer, err = wl.getWhoisServerForTLD(ctx, tld, nil); err != nil {
 		err = fmt.Errorf("getTLDWhoisServer() error:%w", err)
 		return whoisInfo, whoisRaw, err
 	}
 
 	// Query TLD whois server
-	if whoisRaw, err = wl.queryWhois(ctx, domain, whoisServer, wl.config.DefaultTimeout); err != nil {
+	if whoisRaw, err = wl.queryWhois(ctx, domain, whoisServer, wl.config.DefaultTimeout, nil); err != nil {
 		err = fmt.Errorf("queryWhois() error:%w", err)
 		return whoisInfo, whoisRaw, err
 	}
@@ -211,7 +229,7 @@ func (wl *WhoisLookup) GetRegistrarWhois(ctx context.Context, domain string) (wh
 
 	// If TLD whois response contains domain whois server, query domain whois server
 	if whoisInfo.Domain.WhoisServer != "" {
-		if whoisRaw, err = wl.queryWhois(ctx, domain, whoisInfo.Domain.WhoisServer, wl.config.DefaultTimeout); err != nil {
+		if whoisRaw, err = wl.queryWhois(ctx, domain, whoisInfo.Domain.WhoisServer, wl.config.DefaultTimeout, nil); err != nil {
 			err = fmt.Errorf("queryWhois() error:%w", err)
 			return whoisInfo, whoisRaw, err
 		}
@@ -225,12 +243,16 @@ func (wl *WhoisLookup) GetRegistrarWhois(ctx context.Context, domain string) (wh
 }
 
 // queryWhois queries the specified WHOIS server for the specified domain.
-func (wl *WhoisLookup) queryWhois(ctx context.Context, domain, whoisServer string, timeout time.Duration) (rawWhois string, err error) {
+func (wl *WhoisLookup) queryWhois(ctx context.Context, domain, whoisServer string, timeout time.Duration, localAddr *net.TCPAddr) (rawWhois string, err error) {
+
+	if localAddr == nil {
+		localAddr = wl.GetLocalAddr()
+	}
 
 	var (
 		dialer = net.Dialer{
 			Timeout:   timeout,
-			LocalAddr: wl.GetLocalAddr(),
+			LocalAddr: localAddr,
 		}
 		conn net.Conn
 	)
@@ -288,18 +310,22 @@ func (wl *WhoisLookup) setTLDServerToCache(tld string, whoisServer string) {
 
 // getWhoisServerForTLD queries the IANA WHOIS server for the specified TLD
 // and returns the WHOIS server associated with that TLD.
-func (wl *WhoisLookup) getWhoisServerForTLD(ctx context.Context, tld string) (whoisServer string, err error) {
+func (wl *WhoisLookup) getWhoisServerForTLD(ctx context.Context, tld string, localAddr *net.TCPAddr) (whoisServer string, err error) {
 	whoisServer = wl.getTLDServerFromCache(tld)
 
 	if whoisServer != "" {
 		return whoisServer, nil
 	}
 
+	if localAddr == nil {
+		localAddr = wl.GetLocalAddr()
+	}
+
 	// Connect to IANA WHOIS server
 	var (
 		dialer = net.Dialer{
 			Timeout:   wl.config.DefaultTimeout,
-			LocalAddr: wl.GetLocalAddr(),
+			LocalAddr: localAddr,
 		}
 		conn net.Conn
 	)
