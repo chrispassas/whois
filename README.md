@@ -45,35 +45,32 @@ func main() {
       "clientDeleteProhibited"
     ],
     "name_servers": [
-      "ns-520.awsdns-01.net",
+      "ns-1283.awsdns-32.org",
+      "ns-421.awsdns-52.com",
       "dns3.p08.nsone.net",
       "dns2.p08.nsone.net",
-      "ns-1707.awsdns-21.co.uk",
-      "ns-421.awsdns-52.com",
-      "dns1.p08.nsone.net",
       "dns4.p08.nsone.net",
-      "ns-1283.awsdns-32.org"
+      "ns-1707.awsdns-21.co.uk",
+      "ns-520.awsdns-01.net",
+      "dns1.p08.nsone.net"
     ],
     "created_date": "2007-10-09T18:20:50+0000",
     "updated_date": "2024-09-07T09:16:33+0000",
     "expiration_date": "2026-10-09T00:00:00+0000"
   },
+  "registrar": {
+    "id": "292",
+    "name": "MarkMonitor, Inc.",
+    "phone": "+1.2086851750",
+    "email": "abusecomplaints@markmonitor.com",
+    "referral_url": "http://www.markmonitor.com"
+  },
   "registrant": {
     "organization": "GitHub, Inc.",
-    "province": "CA",
-    "country": "US",
-    "email": "select request email form at https://domains.markmonitor.com/whois/github.com"
-  },
-  "administrative": {
-    "organization": "GitHub, Inc.",
-    "province": "CA",
     "country": "US",
     "email": "select request email form at https://domains.markmonitor.com/whois/github.com"
   },
   "technical": {
-    "organization": "GitHub, Inc.",
-    "province": "CA",
-    "country": "US",
     "email": "select request email form at https://domains.markmonitor.com/whois/github.com"
   }
 }
@@ -96,40 +93,32 @@ Domain Status: clientUpdateProhibited (https://www.icann.org/epp#clientUpdatePro
 Domain Status: clientTransferProhibited (https://www.icann.org/epp#clientTransferProhibited)
 Domain Status: clientDeleteProhibited (https://www.icann.org/epp#clientDeleteProhibited)
 Registrant Organization: GitHub, Inc.
-Registrant State/Province: CA
 Registrant Country: US
 Registrant Email: Select Request Email Form at https://domains.markmonitor.com/whois/github.com
-Admin Organization: GitHub, Inc.
-Admin State/Province: CA
-Admin Country: US
-Admin Email: Select Request Email Form at https://domains.markmonitor.com/whois/github.com
-Tech Organization: GitHub, Inc.
-Tech State/Province: CA
-Tech Country: US
 Tech Email: Select Request Email Form at https://domains.markmonitor.com/whois/github.com
-Name Server: ns-520.awsdns-01.net
+Name Server: ns-1283.awsdns-32.org
+Name Server: ns-421.awsdns-52.com
 Name Server: dns3.p08.nsone.net
 Name Server: dns2.p08.nsone.net
-Name Server: ns-1707.awsdns-21.co.uk
-Name Server: ns-421.awsdns-52.com
-Name Server: dns1.p08.nsone.net
 Name Server: dns4.p08.nsone.net
-Name Server: ns-1283.awsdns-32.org
+Name Server: ns-1707.awsdns-21.co.uk
+Name Server: ns-520.awsdns-01.net
+Name Server: dns1.p08.nsone.net
 DNSSEC: unsigned
 URL of the ICANN WHOIS Data Problem Reporting System: http://wdprs.internic.net/
->>> Last update of WHOIS database: 2025-03-23T02:57:05+0000 <<<
+>>> Last update of WHOIS database: 2025-10-09T17:12:04+0000 <<<
 
 For more information on WHOIS status codes, please visit:
   https://www.icann.org/resources/pages/epp-status-codes
 
-If you wish to contact this domain’s Registrant, Administrative, or Technical
+If you wish to contact this domain’s Registrant or Technical
 contact, and such email address is not visible above, you may do so via our web
 form, pursuant to ICANN’s Temporary Specification. To verify that you are not a
 robot, please enter your email address to receive a link to a page that
 facilitates email communication with the relevant contact(s).
 
 Web-based WHOIS:
-  https://domains.markmonitor.com/whois
+  https://domains.markmonitor.com/whois/contact/github.com
 
 If you have a legitimate interest in viewing the non-public WHOIS details, send
 your request and the reasons for your request to whoisrequest@markmonitor.com
