@@ -3,6 +3,7 @@ package whois
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -193,6 +194,92 @@ func (wl *WhoisLookup) GetRegistryWhoisWithLocalAddr(ctx context.Context, domain
 // Registrar look ups require one extra step to query the domain WHOIS server and will take longer.
 func (wl *WhoisLookup) GetRegistrarWhois(ctx context.Context, domain string) (whoisInfo WhoisInfo, whoisRaw string, err error) {
 	return wl.GetRegistrarWhoisWithLocalAddr(ctx, domain, nil)
+}
+
+type Result struct {
+	Domain              string
+	TLD                 string
+	RegistryWhois       *WhoisInfo
+	RegistryWhoisRaw    string
+	RegistrarWhois      *WhoisInfo
+	RegistrarWhoisRaw   string
+	RegistryWhoisServer string
+}
+
+var (
+	ErrWhoisTLD            = errors.New("Failed to retrieve tld whois server")
+	ErrWhoisRegistry       = errors.New("Failed to query tld/registry whois server")
+	ErrParseWhoisRegistry  = errors.New("Failed to parse whois registry response")
+	ErrWhoisRegistrar      = errors.New("Failed to query registrar whois server")
+	ErrParseWhoisRegistrar = errors.New("Failed to parse whois registrar response")
+
+	ErrRegistryMissingWhoisServer = errors.New("Registry whois response missing whois server")
+	ErrRegistryMissingDomain      = errors.New("Registry whois response missing domain")
+)
+
+type LookupConfig struct {
+	Timeout   time.Duration
+	LocalAddr *net.TCPAddr
+}
+
+// GetWhoisWithLocalAddr returns the WHOIS information for the specified domain from the registrar.
+// If the TLD WHOIS response contains a domain WHOIS server, the domain WHOIS server is queried.
+// Registrar look ups typically contain more detailed information than registry look ups.
+// Registrar look ups require one extra step to query the domain WHOIS server and will take longer.
+func (wl *WhoisLookup) GetWhoisWithLocalAddr(ctx context.Context, domain string, localAddr *net.TCPAddr) (result Result, err error) {
+
+	result.Domain = domain
+
+	pieces := strings.Split(domain, ".")
+	if len(pieces) < 2 {
+		err = fmt.Errorf("invalid domain name: %s", domain)
+		return result, err
+	}
+	result.TLD = pieces[len(pieces)-1]
+
+	// Get TLD whois server
+	// var whoisServer string
+	if result.RegistryWhoisServer, err = wl.getWhoisServerForTLD(ctx, result.TLD, localAddr); err != nil {
+		err = errors.Join(ErrWhoisTLD, fmt.Errorf("getTLDWhoisServer() error:%w", err))
+		return result, err
+	}
+
+	// Query TLD whois server / thin record
+	if result.RegistryWhoisRaw, err = wl.queryWhois(ctx, domain, result.RegistryWhoisServer, wl.config.DefaultTimeout, localAddr); err != nil {
+		err = errors.Join(ErrWhoisRegistry, fmt.Errorf("queryWhois() server:%s error:%w", result.RegistryWhoisServer, err))
+		return result, err
+	}
+
+	var tmpRegistryWhoisInfo WhoisInfo
+	// Parse raw whois data to WhoisInfo / thin record
+	if tmpRegistryWhoisInfo, err = wrapParser(result.RegistryWhoisRaw); err != nil {
+		err = errors.Join(ErrParseWhoisRegistry, fmt.Errorf("parse error:%w", err))
+		return result, err
+	}
+	result.RegistrarWhois = &tmpRegistryWhoisInfo
+
+	if result.RegistrarWhois == nil || result.RegistrarWhois.Domain == nil {
+		err = ErrRegistryMissingDomain
+		return result, err
+	}
+
+	// If TLD whois response contains domain whois server, query domain whois server
+	if result.RegistrarWhois.Domain.WhoisServer != "" {
+		if result.RegistrarWhoisRaw, err = wl.queryWhois(ctx, domain, result.RegistrarWhois.Domain.WhoisServer, wl.config.DefaultTimeout, localAddr); err != nil {
+			err = errors.Join(ErrWhoisRegistrar, fmt.Errorf("queryWhois() server:%s error:%w", result.RegistrarWhois.Domain.WhoisServer, err))
+			return result, err
+		}
+		var tmpRegistrarWhois WhoisInfo
+		if tmpRegistrarWhois, err = wrapParser(result.RegistrarWhoisRaw); err != nil {
+			err = errors.Join(ErrParseWhoisRegistrar, fmt.Errorf("parse error:%w", err))
+			return result, err
+		}
+		result.RegistrarWhois = &tmpRegistrarWhois
+	} else {
+		err = ErrRegistryMissingWhoisServer
+	}
+
+	return result, err
 }
 
 // GetRegistrarWhoisWithLocalAddr returns the WHOIS information for the specified domain from the registrar.
@@ -400,7 +487,7 @@ func wrapParser(whoisRaw string) (info WhoisInfo, err error) {
 	}
 
 	if whoisInfoP.Registrar != nil {
-		info.Registrar = convertContact(whoisInfoP.Billing)
+		info.Registrar = convertContact(whoisInfoP.Registrar)
 	}
 
 	if whoisInfoP.Registrant != nil {
