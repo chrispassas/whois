@@ -256,17 +256,17 @@ func (wl *WhoisLookup) GetWhoisWithLocalAddr(ctx context.Context, domain string,
 		err = errors.Join(ErrParseWhoisRegistry, fmt.Errorf("parse error:%w", err))
 		return result, err
 	}
-	result.RegistrarWhois = &tmpRegistryWhoisInfo
+	result.RegistryWhois = &tmpRegistryWhoisInfo
 
-	if result.RegistrarWhois == nil || result.RegistrarWhois.Domain == nil {
+	if result.RegistryWhois == nil || result.RegistryWhois.Domain == nil {
 		err = ErrRegistryMissingDomain
 		return result, err
 	}
 
 	// If TLD whois response contains domain whois server, query domain whois server
-	if result.RegistrarWhois.Domain.WhoisServer != "" {
-		if result.RegistrarWhoisRaw, err = wl.queryWhois(ctx, domain, result.RegistrarWhois.Domain.WhoisServer, wl.config.DefaultTimeout, localAddr); err != nil {
-			err = errors.Join(ErrWhoisRegistrar, fmt.Errorf("queryWhois() server:%s error:%w", result.RegistrarWhois.Domain.WhoisServer, err))
+	if result.RegistryWhois.Domain.WhoisServer != "" {
+		if result.RegistrarWhoisRaw, err = wl.queryWhois(ctx, domain, result.RegistryWhois.Domain.WhoisServer, wl.config.DefaultTimeout, localAddr); err != nil {
+			err = errors.Join(ErrWhoisRegistrar, fmt.Errorf("queryWhois() server:%s error:%w", result.RegistryWhois.Domain.WhoisServer, err))
 			return result, err
 		}
 		var tmpRegistrarWhois WhoisInfo
