@@ -197,13 +197,13 @@ func (wl *WhoisLookup) GetRegistrarWhois(ctx context.Context, domain string) (wh
 }
 
 type Result struct {
-	Domain              string
-	TLD                 string
-	RegistryWhois       *WhoisInfo
-	RegistryWhoisRaw    string
-	RegistrarWhois      *WhoisInfo
-	RegistrarWhoisRaw   string
-	RegistryWhoisServer string
+	Domain              string     `json:"domain"`
+	TLD                 string     `json:"tld"`
+	RegistryWhois       *WhoisInfo `json:"registry_whois"`
+	RegistryWhoisRaw    string     `json:"registry_whois_raw"`
+	RegistrarWhois      *WhoisInfo `json:"registrar_whois"`
+	RegistrarWhoisRaw   string     `json:"registrar_whois_raw"`
+	RegistryWhoisServer string     `json:"registry_whois_server"`
 }
 
 var (
